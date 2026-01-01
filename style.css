@@ -1,0 +1,447 @@
+/* Reset default browser styles for consistency */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Main body styling */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background-color: #f5f7fa;
+    color: #333;
+    line-height: 1.6;
+    padding: 0;
+    margin: 0;
+}
+
+/* Main container - centers content and adds padding */
+.container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+    min-height: 100vh;
+}
+
+/* Header section with title and date */
+.header {
+    background-color: #4A90E2;
+    color: white;
+    padding: 30px 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.header h1 {
+    font-size: 28px;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.current-date {
+    font-size: 16px;
+    opacity: 0.95;
+}
+
+/* ============================================
+   TAB NAVIGATION
+   ============================================ */
+
+.tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 14px;
+    background-color: white;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: #666;
+}
+
+.tab-btn:hover {
+    border-color: #4A90E2;
+    color: #4A90E2;
+}
+
+.tab-btn.active {
+    background-color: #4A90E2;
+    border-color: #4A90E2;
+    color: white;
+}
+
+/* Tab content areas */
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* ============================================
+   TODAY VIEW (Progress + Tasks)
+   ============================================ */
+
+/* Progress section styling */
+.progress-section {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.progress-label {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 10px;
+    font-weight: 500;
+}
+
+/* Progress bar container */
+.progress-bar {
+    height: 12px;
+    background-color: #e0e0e0;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+/* The blue fill that grows as tasks are completed */
+.progress-fill {
+    height: 100%;
+    background-color: #4A90E2;
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+/* Container for all tasks */
+.tasks-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Individual task item */
+.task-item {
+    background: white;
+    padding: 16px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease;
+}
+
+/* Slight lift effect on hover (for desktop) */
+.task-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Custom checkbox styling - hidden default checkbox */
+.task-item input[type="checkbox"] {
+    width: 28px;
+    height: 28px;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+/* Task label (the task name) */
+.task-label {
+    flex: 1;
+    font-size: 16px;
+    color: #333;
+    cursor: pointer;
+    user-select: none;
+}
+
+/* Strikethrough effect when task is completed */
+.task-item.completed .task-label {
+    text-decoration: line-through;
+    color: #999;
+}
+
+/* Note button styling */
+.note-btn {
+    padding: 8px 16px;
+    background-color: #f0f0f0;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    white-space: nowrap;
+}
+
+.note-btn:hover {
+    background-color: #e0e0e0;
+}
+
+/* Different color when a note exists */
+.note-btn.has-note {
+    background-color: #FFA726;
+    color: white;
+}
+
+.note-btn.has-note:hover {
+    background-color: #FB8C00;
+}
+
+/* ============================================
+   HISTORY VIEW
+   ============================================ */
+
+.empty-state {
+    background: white;
+    padding: 40px 20px;
+    border-radius: 12px;
+    text-align: center;
+    color: #999;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.empty-state p {
+    font-size: 15px;
+    line-height: 1.6;
+}
+
+.history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Individual history item */
+.history-item {
+    background: white;
+    padding: 18px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.history-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.history-item-left {
+    flex: 1;
+}
+
+.history-date {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 4px;
+}
+
+.history-summary {
+    font-size: 14px;
+    color: #666;
+}
+
+.history-score {
+    font-size: 24px;
+    font-weight: 700;
+    color: #4A90E2;
+}
+
+/* ============================================
+   DAY DETAIL MODAL
+   ============================================ */
+
+.day-detail-summary {
+    color: #666;
+    margin-bottom: 20px;
+    font-size: 15px;
+}
+
+.day-detail-tasks {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.day-detail-task {
+    padding: 12px;
+    background-color: #f5f7fa;
+    border-radius: 8px;
+}
+
+.day-detail-task.completed {
+    border-left: 4px solid #4A90E2;
+}
+
+.day-detail-task.incomplete {
+    border-left: 4px solid #e0e0e0;
+}
+
+.day-detail-task-name {
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 4px;
+}
+
+.day-detail-task.incomplete .day-detail-task-name {
+    color: #999;
+    text-decoration: line-through;
+}
+
+.day-detail-task-note {
+    font-size: 14px;
+    color: #666;
+    font-style: italic;
+    margin-top: 6px;
+    padding-left: 8px;
+    border-left: 2px solid #e0e0e0;
+}
+
+/* ============================================
+   MODALS
+   ============================================ */
+
+/* Modal (popup) styling - hidden by default */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Show modal when it has the 'active' class */
+.modal.active {
+    display: flex;
+}
+
+/* Modal content box */
+.modal-content {
+    background: white;
+    padding: 24px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.modal-content h2 {
+    margin-bottom: 12px;
+    color: #333;
+    font-size: 22px;
+}
+
+.modal-task-name {
+    color: #666;
+    margin-bottom: 16px;
+    font-size: 14px;
+}
+
+/* Textarea for note input */
+#noteTextarea {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 15px;
+    font-family: inherit;
+    resize: vertical;
+    margin-bottom: 16px;
+}
+
+#noteTextarea:focus {
+    outline: none;
+    border-color: #4A90E2;
+}
+
+/* Button container in modal */
+.modal-buttons {
+    display: flex;
+    gap: 12px;
+}
+
+/* General button styling */
+.btn {
+    flex: 1;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    font-weight: 500;
+}
+
+/* Primary button (Save) */
+.btn-primary {
+    background-color: #4A90E2;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #357ABD;
+}
+
+/* Secondary button (Cancel) */
+.btn-secondary {
+    background-color: #f0f0f0;
+    color: #333;
+}
+
+.btn-secondary:hover {
+    background-color: #e0e0e0;
+}
+
+/* Mobile optimization - larger touch targets */
+@media (max-width: 600px) {
+    .container {
+        padding: 12px;
+    }
+    
+    .header {
+        padding: 24px 16px;
+    }
+    
+    .header h1 {
+        font-size: 24px;
+    }
+    
+    .task-item input[type="checkbox"] {
+        width: 32px;
+        height: 32px;
+    }
+    
+    .note-btn {
+        padding: 10px 14px;
+        font-size: 13px;
+    }
+    
+    .history-score {
+        font-size: 20px;
+    }
+}

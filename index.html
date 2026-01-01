@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#4A90E2">
+    <title>Daily Checklist</title>
+    
+    <!-- Link to the app manifest for PWA installation -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Link to the stylesheet -->
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Apple-specific meta tags for iOS installation -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Daily Checklist">
+    <link rel="apple-touch-icon" href="icon-192.png">
+</head>
+<body>
+    <!-- Main container for the entire app -->
+    <div class="container">
+        
+        <!-- Header section with title and today's date -->
+        <header class="header">
+            <h1>Daily Checklist</h1>
+            <!-- This paragraph will be filled with today's date by JavaScript -->
+            <p class="current-date" id="currentDate"></p>
+        </header>
+
+        <!-- Tab navigation to switch between Today and History -->
+        <div class="tabs">
+            <button class="tab-btn active" id="todayTab">Today</button>
+            <button class="tab-btn" id="historyTab">History</button>
+        </div>
+
+        <!-- TODAY VIEW -->
+        <div class="tab-content active" id="todayView">
+            <!-- Progress section showing how many tasks are completed -->
+            <div class="progress-section">
+                <div class="progress-label">
+                    <!-- This will show "3 of 7 tasks completed" -->
+                    <span id="progressText">0 of 7 tasks completed</span>
+                </div>
+                <!-- Visual progress bar -->
+                <div class="progress-bar">
+                    <!-- This inner bar grows as you complete tasks -->
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+            </div>
+
+            <!-- List of all daily tasks -->
+            <div class="tasks-container" id="tasksContainer">
+                <!-- Tasks will be inserted here by JavaScript -->
+            </div>
+        </div>
+
+        <!-- HISTORY VIEW -->
+        <div class="tab-content" id="historyView">
+            <!-- Empty state message when no history exists -->
+            <div class="empty-state" id="emptyHistory">
+                <p>No history yet. Complete today's tasks to start building your history!</p>
+            </div>
+            
+            <!-- List of past days -->
+            <div class="history-list" id="historyList">
+                <!-- History items will be inserted here by JavaScript -->
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Modal popup for adding/editing notes (TODAY only) -->
+    <div class="modal" id="noteModal">
+        <div class="modal-content">
+            <h2>Add Note</h2>
+            <!-- This will show which task the note is for -->
+            <p class="modal-task-name" id="modalTaskName"></p>
+            
+            <!-- Text area where you type the note -->
+            <textarea 
+                id="noteTextarea" 
+                placeholder="Write your note here..."
+                rows="5"
+            ></textarea>
+            
+            <!-- Buttons to save or cancel -->
+            <div class="modal-buttons">
+                <button class="btn btn-primary" id="saveNoteBtn">Save Note</button>
+                <button class="btn btn-secondary" id="cancelNoteBtn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal popup for viewing a specific day's history -->
+    <div class="modal" id="dayDetailModal">
+        <div class="modal-content">
+            <h2 id="dayDetailDate">Date</h2>
+            <p class="day-detail-summary" id="dayDetailSummary"></p>
+            
+            <!-- List of tasks for that day -->
+            <div class="day-detail-tasks" id="dayDetailTasks">
+                <!-- Tasks will be inserted here -->
+            </div>
+            
+            <div class="modal-buttons">
+                <button class="btn btn-secondary" id="closeDayDetailBtn">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Link to the main JavaScript file -->
+    <script src="app.js"></script>
+</body>
+</html>
