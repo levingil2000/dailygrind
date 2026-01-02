@@ -15,36 +15,25 @@ const DAILY_TASKS = [
 // ============================================
 // DATABASE SETUP (IndexedDB)
 // ============================================
-// IndexedDB is a browser database that stores data permanently on the device
-// It works offline and survives page refreshes
-
 let db; // This will hold our database connection
 
 // Open or create the database
 function openDatabase() {
     return new Promise((resolve, reject) => {
-        // Open database named 'DailyChecklistDB', version 1
         const request = indexedDB.open('DailyChecklistDB', 1);
 
-        // This runs only the first time or when version changes
-        // It sets up the database structure
         request.onupgradeneeded = function(event) {
             db = event.target.result;
-            
-            // Create a "table" (object store) called 'dailyData'
-            // It stores one record per day with date as the key
             if (!db.objectStoreNames.contains('dailyData')) {
                 db.createObjectStore('dailyData', { keyPath: 'date' });
             }
         };
 
-        // Successfully opened
         request.onsuccess = function(event) {
             db = event.target.result;
             resolve(db);
         };
 
-        // Error opening database
         request.onerror = function(event) {
             reject('Database error: ' + event.target.error);
         };
@@ -52,10 +41,10 @@ function openDatabase() {
 }
 
 // ============================================
-// DATA FUNCTIONS
+// DATE FUNCTIONS
 // ============================================
 
-// Get today's date in YYYY-MM-DD format (e.g., "2025-01-15")
+// Get today's date in YYYY-MM-DD format
 function getTodayDateString() {
     const today = new Date();
     const year = today.getFullYear();
@@ -66,23 +55,48 @@ function getTodayDateString() {
 
 // Get formatted date for display (e.g., "Thursday, January 1, 2026")
 function getFormattedDate(dateString) {
-    // If no date provided, use today
     if (!dateString) {
         const today = new Date();
         const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
         return today.toLocaleDateString('en-US', options);
     }
     
-    // Parse the YYYY-MM-DD string
     const date = new Date(dateString + 'T00:00:00');
     const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
     return date.toLocaleDateString('en-US', options);
 }
 
+// Get short formatted date (e.g., "Jan 1, 2026")
+function getShortFormattedDate(dateString) {
+    const date = new Date(dateString + 'T00:00:00');
+    const options = { month: 'short', day: 'numeric', year: 'numeric' };
+    return date.toLocaleDateString('en-US', options);
+}
+
+// Generate array of dates for last N days
+function getDateRange(days) {
+    const dates = [];
+    const today = new Date();
+    
+    for (let i = days - 1; i >= 0; i--) {
+        const date = new Date(today);
+        date.setDate(date.getDate() - i);
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        dates.push(`${year}-${month}-${day}`);
+    }
+    
+    return dates;
+}
+
+// ============================================
+// DATA FUNCTIONS
+// ============================================
+
 // Load data for a specific date
 function loadDataForDate(dateString) {
     return new Promise((resolve, reject) => {
-        // Start a transaction to read from the database
         const transaction = db.transaction(['dailyData'], 'readonly');
         const store = transaction.objectStore('dailyData');
         const request = store.get(dateString);
@@ -90,14 +104,12 @@ function loadDataForDate(dateString) {
         request.onsuccess = function(event) {
             const data = event.target.result;
             
-            // If no data exists for this date, create default structure
             if (!data) {
                 const defaultData = {
                     date: dateString,
                     tasks: {}
                 };
                 
-                // Initialize each task as incomplete with no note
                 DAILY_TASKS.forEach(task => {
                     defaultData.tasks[task.id] = {
                         completed: false,
@@ -125,7 +137,6 @@ function loadTodayData() {
 // Save data for any date to the database
 function saveData(data) {
     return new Promise((resolve, reject) => {
-        // Start a transaction to write to the database
         const transaction = db.transaction(['dailyData'], 'readwrite');
         const store = transaction.objectStore('dailyData');
         const request = store.put(data);
@@ -151,7 +162,6 @@ function getAllHistoryData() {
             const allData = event.target.result;
             const todayDate = getTodayDateString();
             
-            // Filter out today and sort by date (newest first)
             const history = allData
                 .filter(item => item.date !== todayDate)
                 .sort((a, b) => b.date.localeCompare(a.date));
@@ -165,13 +175,29 @@ function getAllHistoryData() {
     });
 }
 
+// Get all data including today
+function getAllData() {
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction(['dailyData'], 'readonly');
+        const store = transaction.objectStore('dailyData');
+        const request = store.getAll();
+
+        request.onsuccess = function(event) {
+            resolve(event.target.result);
+        };
+
+        request.onerror = function(event) {
+            reject('Error loading all data: ' + event.target.error);
+        };
+    });
+}
+
 // ============================================
-// UI UPDATE FUNCTIONS - TODAY VIEW
+// TODAY VIEW - UI UPDATE FUNCTIONS
 // ============================================
 
 // Update the progress bar and text
 function updateProgress(data) {
-    // Count how many tasks are completed
     let completedCount = 0;
     DAILY_TASKS.forEach(task => {
         if (data.tasks[task.id].completed) {
@@ -179,14 +205,11 @@ function updateProgress(data) {
         }
     });
 
-    // Calculate percentage
     const percentage = (completedCount / DAILY_TASKS.length) * 100;
 
-    // Update the progress text (e.g., "3 of 7 tasks completed")
     const progressText = document.getElementById('progressText');
     progressText.textContent = `${completedCount} of ${DAILY_TASKS.length} tasks completed`;
 
-    // Update the progress bar width
     const progressFill = document.getElementById('progressFill');
     progressFill.style.width = percentage + '%';
 }
@@ -194,67 +217,276 @@ function updateProgress(data) {
 // Render all tasks on the page (TODAY view)
 function renderTasks(data) {
     const container = document.getElementById('tasksContainer');
-    container.innerHTML = ''; // Clear existing tasks
+    container.innerHTML = '';
 
-    // Create HTML for each task
     DAILY_TASKS.forEach(task => {
         const taskData = data.tasks[task.id];
         
-        // Create task item container
         const taskItem = document.createElement('div');
         taskItem.className = 'task-item';
         if (taskData.completed) {
             taskItem.classList.add('completed');
         }
 
-        // Create checkbox
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
         checkbox.checked = taskData.completed;
         checkbox.id = 'task-' + task.id;
         
-        // When checkbox is clicked, update completion status
         checkbox.addEventListener('change', function() {
             handleTaskToggle(task.id, this.checked);
         });
 
-        // Create label
         const label = document.createElement('label');
         label.className = 'task-label';
         label.htmlFor = 'task-' + task.id;
         label.textContent = task.name;
 
-        // Create note button
         const noteBtn = document.createElement('button');
         noteBtn.className = 'note-btn';
         noteBtn.textContent = 'Add Note';
         
-        // If note exists, change button appearance
         if (taskData.note && taskData.note.trim() !== '') {
             noteBtn.classList.add('has-note');
             noteBtn.textContent = 'Edit Note';
         }
         
-        // When note button is clicked, open modal
         noteBtn.addEventListener('click', function() {
             openNoteModal(task.id, task.name);
         });
 
-        // Add all elements to task item
         taskItem.appendChild(checkbox);
         taskItem.appendChild(label);
         taskItem.appendChild(noteBtn);
 
-        // Add task item to container
         container.appendChild(taskItem);
     });
 
-    // Update progress bar
     updateProgress(data);
 }
 
 // ============================================
-// UI UPDATE FUNCTIONS - HISTORY VIEW
+// PROGRESS VIEW - HEATMAP
+// ============================================
+
+// Render the GitHub-style heatmap
+async function renderHeatmap() {
+    try {
+        const allData = await getAllData();
+        const container = document.getElementById('heatmapContainer');
+        
+        // Create data map for quick lookup
+        const dataMap = {};
+        allData.forEach(dayData => {
+            let completedCount = 0;
+            DAILY_TASKS.forEach(task => {
+                if (dayData.tasks[task.id].completed) {
+                    completedCount++;
+                }
+            });
+            dataMap[dayData.date] = completedCount;
+        });
+
+        // Generate last 365 days
+        const dates = getDateRange(365);
+        
+        // Create grid container
+        const grid = document.createElement('div');
+        grid.className = 'heatmap-grid';
+
+        // Calculate which day of week the first date falls on
+        const firstDate = new Date(dates[0] + 'T00:00:00');
+        const firstDayOfWeek = firstDate.getDay(); // 0 = Sunday
+
+        // Add empty cells to align the first date properly
+        for (let i = 0; i < firstDayOfWeek; i++) {
+            const emptyCell = document.createElement('div');
+            emptyCell.className = 'heatmap-cell empty';
+            grid.appendChild(emptyCell);
+        }
+
+        // Create cells for each date
+        dates.forEach(dateString => {
+            const cell = document.createElement('div');
+            cell.className = 'heatmap-cell';
+            
+            const completedCount = dataMap[dateString] || 0;
+            
+            // Determine color level (0-4)
+            let level = 0;
+            if (completedCount === 0) level = 0;
+            else if (completedCount <= 2) level = 1;
+            else if (completedCount <= 4) level = 2;
+            else if (completedCount <= 6) level = 3;
+            else level = 4;
+            
+            cell.setAttribute('data-level', level);
+            cell.setAttribute('data-date', dateString);
+            cell.setAttribute('data-count', completedCount);
+            
+            // Hover and click events
+            cell.addEventListener('mouseenter', showHeatmapTooltip);
+            cell.addEventListener('mouseleave', hideHeatmapTooltip);
+            cell.addEventListener('click', function() {
+                loadDataForDate(dateString).then(dayData => {
+                    showDayDetail(dayData);
+                });
+            });
+            
+            grid.appendChild(cell);
+        });
+
+        container.innerHTML = '';
+        container.appendChild(grid);
+
+        // Create tooltip element if it doesn't exist
+        if (!document.getElementById('heatmapTooltip')) {
+            const tooltip = document.createElement('div');
+            tooltip.id = 'heatmapTooltip';
+            tooltip.className = 'heatmap-tooltip';
+            document.body.appendChild(tooltip);
+        }
+
+    } catch (error) {
+        console.error('Error rendering heatmap:', error);
+    }
+}
+
+// Show tooltip on heatmap hover
+function showHeatmapTooltip(event) {
+    const cell = event.target;
+    const date = cell.getAttribute('data-date');
+    const count = cell.getAttribute('data-count');
+    
+    if (!date) return;
+    
+    const tooltip = document.getElementById('heatmapTooltip');
+    const formattedDate = getShortFormattedDate(date);
+    
+    tooltip.textContent = `${formattedDate}: ${count}/7 tasks`;
+    tooltip.classList.add('active');
+    
+    // Position tooltip near cursor
+    const rect = cell.getBoundingClientRect();
+    tooltip.style.left = rect.left + (rect.width / 2) - (tooltip.offsetWidth / 2) + 'px';
+    tooltip.style.top = rect.top - tooltip.offsetHeight - 8 + 'px';
+}
+
+// Hide tooltip
+function hideHeatmapTooltip() {
+    const tooltip = document.getElementById('heatmapTooltip');
+    tooltip.classList.remove('active');
+}
+
+// ============================================
+// PROGRESS VIEW - TASK STATISTICS
+// ============================================
+
+// Render task statistics cards
+async function renderTaskStats() {
+    try {
+        const allData = await getAllData();
+        const container = document.getElementById('taskStatsContainer');
+        container.innerHTML = '';
+
+        // Calculate start of year
+        const today = new Date();
+        const startOfYear = new Date(today.getFullYear(), 0, 1);
+        const daysSinceStartOfYear = Math.floor((today - startOfYear) / (1000 * 60 * 60 * 24)) + 1;
+
+        DAILY_TASKS.forEach(task => {
+            // Calculate statistics for this task
+            let completedDays = 0;
+            let totalActiveDays = 0;
+            let missedDays = 0;
+
+            allData.forEach(dayData => {
+                const taskData = dayData.tasks[task.id];
+                
+                // Count total active days (days where at least one task was done)
+                const hasAnyTask = DAILY_TASKS.some(t => dayData.tasks[t.id].completed);
+                
+                if (taskData.completed) {
+                    completedDays++;
+                }
+                
+                if (hasAnyTask) {
+                    totalActiveDays++;
+                    if (!taskData.completed) {
+                        missedDays++;
+                    }
+                }
+            });
+
+            // Calculate success rate
+            const successRate = totalActiveDays > 0 
+                ? Math.round((completedDays / totalActiveDays) * 100) 
+                : 0;
+
+            // Create card
+            const card = document.createElement('div');
+            card.className = 'task-stat-card';
+
+            const name = document.createElement('div');
+            name.className = 'task-stat-name';
+            name.textContent = task.name;
+
+            const metrics = document.createElement('div');
+            metrics.className = 'task-stat-metrics';
+
+            // Progress metric
+            const progressMetric = document.createElement('div');
+            progressMetric.className = 'task-stat-metric';
+            progressMetric.innerHTML = `
+                <span class="metric-label">Progress</span>
+                <span class="metric-value">${completedDays}/${daysSinceStartOfYear}</span>
+            `;
+
+            // Success rate metric
+            const successMetric = document.createElement('div');
+            successMetric.className = 'task-stat-metric';
+            successMetric.innerHTML = `
+                <span class="metric-label">Success Rate</span>
+                <span class="metric-value success">${successRate}%</span>
+            `;
+
+            // Misses metric
+            const missesMetric = document.createElement('div');
+            missesMetric.className = 'task-stat-metric';
+            missesMetric.innerHTML = `
+                <span class="metric-label">Misses</span>
+                <span class="metric-value danger">${missedDays} days</span>
+            `;
+
+            metrics.appendChild(progressMetric);
+            metrics.appendChild(successMetric);
+            metrics.appendChild(missesMetric);
+
+            // Progress bar
+            const progressBarContainer = document.createElement('div');
+            progressBarContainer.className = 'task-stat-progress-bar';
+            
+            const progressBarFill = document.createElement('div');
+            progressBarFill.className = 'task-stat-progress-fill';
+            const progressPercentage = (completedDays / daysSinceStartOfYear) * 100;
+            progressBarFill.style.width = progressPercentage + '%';
+            
+            progressBarContainer.appendChild(progressBarFill);
+
+            card.appendChild(name);
+            card.appendChild(metrics);
+            card.appendChild(progressBarContainer);
+
+            container.appendChild(card);
+        });
+
+    } catch (error) {
+        console.error('Error rendering task stats:', error);
+    }
+}
+
+// ============================================
+// HISTORY VIEW
 // ============================================
 
 // Render the history list
@@ -264,21 +496,17 @@ async function renderHistory() {
         const historyList = document.getElementById('historyList');
         const emptyState = document.getElementById('emptyHistory');
 
-        // Show empty state if no history
         if (historyData.length === 0) {
             emptyState.style.display = 'block';
             historyList.style.display = 'none';
             return;
         }
 
-        // Hide empty state and show history
         emptyState.style.display = 'none';
         historyList.style.display = 'flex';
-        historyList.innerHTML = ''; // Clear existing items
+        historyList.innerHTML = '';
 
-        // Create a card for each historical day
         historyData.forEach(dayData => {
-            // Count completed tasks
             let completedCount = 0;
             DAILY_TASKS.forEach(task => {
                 if (dayData.tasks[task.id].completed) {
@@ -286,16 +514,13 @@ async function renderHistory() {
                 }
             });
 
-            // Create history item
             const historyItem = document.createElement('div');
             historyItem.className = 'history-item';
             
-            // Click handler to show day detail
             historyItem.addEventListener('click', function() {
                 showDayDetail(dayData);
             });
 
-            // Left side (date and summary)
             const leftDiv = document.createElement('div');
             leftDiv.className = 'history-item-left';
 
@@ -310,7 +535,6 @@ async function renderHistory() {
             leftDiv.appendChild(dateDiv);
             leftDiv.appendChild(summaryDiv);
 
-            // Right side (score)
             const scoreDiv = document.createElement('div');
             scoreDiv.className = 'history-score';
             scoreDiv.textContent = `${completedCount}/7`;
@@ -332,10 +556,8 @@ function showDayDetail(dayData) {
     const summaryText = document.getElementById('dayDetailSummary');
     const tasksContainer = document.getElementById('dayDetailTasks');
 
-    // Set date header
     dateHeader.textContent = getFormattedDate(dayData.date);
 
-    // Count completed tasks
     let completedCount = 0;
     DAILY_TASKS.forEach(task => {
         if (dayData.tasks[task.id].completed) {
@@ -343,13 +565,10 @@ function showDayDetail(dayData) {
         }
     });
 
-    // Set summary
     summaryText.textContent = `${completedCount} of ${DAILY_TASKS.length} tasks completed`;
 
-    // Clear tasks container
     tasksContainer.innerHTML = '';
 
-    // Render each task
     DAILY_TASKS.forEach(task => {
         const taskData = dayData.tasks[task.id];
         
@@ -363,7 +582,6 @@ function showDayDetail(dayData) {
 
         taskDiv.appendChild(taskName);
 
-        // Add note if exists
         if (taskData.note && taskData.note.trim() !== '') {
             const noteDiv = document.createElement('div');
             noteDiv.className = 'day-detail-task-note';
@@ -374,7 +592,6 @@ function showDayDetail(dayData) {
         tasksContainer.appendChild(taskDiv);
     });
 
-    // Show modal
     modal.classList.add('active');
 }
 
@@ -389,29 +606,33 @@ function closeDayDetailModal() {
 // ============================================
 
 function switchToTab(tabName) {
-    // Update tab buttons
     const todayTab = document.getElementById('todayTab');
+    const progressTab = document.getElementById('progressTab');
     const historyTab = document.getElementById('historyTab');
     
-    if (tabName === 'today') {
-        todayTab.classList.add('active');
-        historyTab.classList.remove('active');
-    } else {
-        todayTab.classList.remove('active');
-        historyTab.classList.add('active');
-    }
+    todayTab.classList.remove('active');
+    progressTab.classList.remove('active');
+    historyTab.classList.remove('active');
 
-    // Update tab content
     const todayView = document.getElementById('todayView');
+    const progressView = document.getElementById('progressView');
     const historyView = document.getElementById('historyView');
     
+    todayView.classList.remove('active');
+    progressView.classList.remove('active');
+    historyView.classList.remove('active');
+
     if (tabName === 'today') {
+        todayTab.classList.add('active');
         todayView.classList.add('active');
-        historyView.classList.remove('active');
-    } else {
-        todayView.classList.remove('active');
+    } else if (tabName === 'progress') {
+        progressTab.classList.add('active');
+        progressView.classList.add('active');
+        renderHeatmap();
+        renderTaskStats();
+    } else if (tabName === 'history') {
+        historyTab.classList.add('active');
         historyView.classList.add('active');
-        // Refresh history when switching to it
         renderHistory();
     }
 }
@@ -423,16 +644,9 @@ function switchToTab(tabName) {
 // Handle task checkbox toggle
 async function handleTaskToggle(taskId, isCompleted) {
     try {
-        // Load current data
         const data = await loadTodayData();
-        
-        // Update the specific task
         data.tasks[taskId].completed = isCompleted;
-        
-        // Save to database
         await saveData(data);
-        
-        // Re-render to show changes
         renderTasks(data);
     } catch (error) {
         console.error('Error toggling task:', error);
@@ -441,25 +655,21 @@ async function handleTaskToggle(taskId, isCompleted) {
 }
 
 // Open the note modal for a specific task
-let currentTaskId = null; // Track which task we're editing
+let currentTaskId = null;
 
 function openNoteModal(taskId, taskName) {
     currentTaskId = taskId;
     
-    // Get the modal elements
     const modal = document.getElementById('noteModal');
     const modalTaskName = document.getElementById('modalTaskName');
     const noteTextarea = document.getElementById('noteTextarea');
 
-    // Set the task name in modal
     modalTaskName.textContent = taskName;
 
-    // Load existing note if any
     loadTodayData().then(data => {
         noteTextarea.value = data.tasks[taskId].note || '';
     });
 
-    // Show the modal
     modal.classList.add('active');
     noteTextarea.focus();
 }
@@ -476,23 +686,14 @@ async function saveNote() {
     if (currentTaskId === null) return;
 
     try {
-        // Get the note text
         const noteTextarea = document.getElementById('noteTextarea');
         const noteText = noteTextarea.value.trim();
 
-        // Load current data
         const data = await loadTodayData();
-        
-        // Update the note for this task
         data.tasks[currentTaskId].note = noteText;
         
-        // Save to database
         await saveData(data);
-        
-        // Close modal
         closeNoteModal();
-        
-        // Re-render to show updated button state
         renderTasks(data);
     } catch (error) {
         console.error('Error saving note:', error);
@@ -503,7 +704,6 @@ async function saveNote() {
 // ============================================
 // SERVICE WORKER REGISTRATION
 // ============================================
-// Service worker enables offline functionality
 
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', function() {
@@ -520,34 +720,33 @@ if ('serviceWorker' in navigator) {
 // ============================================
 // INITIALIZATION
 // ============================================
-// This runs when the page loads
 
 async function initApp() {
     try {
-        // Open database connection
         await openDatabase();
         
-        // Set today's date in the header
         const currentDate = document.getElementById('currentDate');
         currentDate.textContent = getFormattedDate();
 
-        // Load and display today's tasks
         const data = await loadTodayData();
         renderTasks(data);
 
-        // Set up tab switching
         const todayTab = document.getElementById('todayTab');
+        const progressTab = document.getElementById('progressTab');
         const historyTab = document.getElementById('historyTab');
         
         todayTab.addEventListener('click', function() {
             switchToTab('today');
         });
         
+        progressTab.addEventListener('click', function() {
+            switchToTab('progress');
+        });
+        
         historyTab.addEventListener('click', function() {
             switchToTab('history');
         });
 
-        // Set up note modal button event listeners
         const saveNoteBtn = document.getElementById('saveNoteBtn');
         const cancelNoteBtn = document.getElementById('cancelNoteBtn');
         const noteModal = document.getElementById('noteModal');
@@ -555,20 +754,17 @@ async function initApp() {
         saveNoteBtn.addEventListener('click', saveNote);
         cancelNoteBtn.addEventListener('click', closeNoteModal);
 
-        // Close note modal if user clicks outside the modal content
         noteModal.addEventListener('click', function(event) {
             if (event.target === noteModal) {
                 closeNoteModal();
             }
         });
 
-        // Set up day detail modal close button
         const closeDayDetailBtn = document.getElementById('closeDayDetailBtn');
         const dayDetailModal = document.getElementById('dayDetailModal');
         
         closeDayDetailBtn.addEventListener('click', closeDayDetailModal);
         
-        // Close day detail modal if user clicks outside
         dayDetailModal.addEventListener('click', function(event) {
             if (event.target === dayDetailModal) {
                 closeDayDetailModal();
