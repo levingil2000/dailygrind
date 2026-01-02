@@ -29,9 +29,10 @@
             <p class="current-date" id="currentDate"></p>
         </header>
 
-        <!-- Tab navigation to switch between Today and History -->
+        <!-- Tab navigation to switch between Today, Progress, and History -->
         <div class="tabs">
             <button class="tab-btn active" id="todayTab">Today</button>
+            <button class="tab-btn" id="progressTab">Progress</button>
             <button class="tab-btn" id="historyTab">History</button>
         </div>
 
@@ -53,6 +54,36 @@
             <!-- List of all daily tasks -->
             <div class="tasks-container" id="tasksContainer">
                 <!-- Tasks will be inserted here by JavaScript -->
+            </div>
+        </div>
+
+        <!-- PROGRESS VIEW -->
+        <div class="tab-content" id="progressView">
+            <!-- Heatmap Section -->
+            <div class="section-card">
+                <h2 class="section-title">Activity Heatmap</h2>
+                <p class="section-subtitle">Your daily completion pattern</p>
+                <div class="heatmap-container" id="heatmapContainer">
+                    <!-- Heatmap will be generated here -->
+                </div>
+                <div class="heatmap-legend">
+                    <span class="legend-label">Less</span>
+                    <div class="legend-box" data-level="0"></div>
+                    <div class="legend-box" data-level="1"></div>
+                    <div class="legend-box" data-level="2"></div>
+                    <div class="legend-box" data-level="3"></div>
+                    <div class="legend-box" data-level="4"></div>
+                    <span class="legend-label">More</span>
+                </div>
+            </div>
+
+            <!-- Task Statistics Section -->
+            <div class="section-card">
+                <h2 class="section-title">Task Statistics</h2>
+                <p class="section-subtitle">Individual task performance</p>
+                <div class="task-stats-container" id="taskStatsContainer">
+                    <!-- Task stat cards will be generated here -->
+                </div>
             </div>
         </div>
 
